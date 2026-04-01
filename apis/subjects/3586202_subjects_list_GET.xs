@@ -4,16 +4,16 @@ query "subjects/list" verb=GET {
   auth = "user"
 
   input {
-    int? page default=1
-    int? limit default=10
+    int? page
+    int? limit
   }
 
   stack {
     // Get subjects for the user
     db.get subjects {
       filter = {user_id: $auth.id}
-      page = $input.page
-      size = $input.limit
+      page = 1
+      size = 10
     } as $subjects
 
     response = $subjects

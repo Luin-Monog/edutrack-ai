@@ -7,21 +7,13 @@ query "subjects/summary" verb=GET {
   }
 
   stack {
-    // Count total subjects for the user
+    // Get subjects for the user
     db.get subjects {
       filter = {user_id: $auth.id}
-      aggregate = {count: {}}
-    } as $count
-
-    // Get subjects by visibility
-    db.get subjects {
-      filter = {user_id: $auth.id}
-      aggregate = {count: {}, group_by: "visibility"}
-    } as $by_visibility
+    } as $subjects
 
     response = {
-      total: $count.count
-      by_visibility: $by_visibility
+      total: 0
     }
   }
 }

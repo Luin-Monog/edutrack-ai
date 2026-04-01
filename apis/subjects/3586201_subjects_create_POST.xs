@@ -17,11 +17,6 @@ query "subjects/create" verb=POST {
       output = ["account_id"]
     } as $user
 
-    // Set default visibility
-    var $visibility {
-      value = $input.visibility ?? "private"
-    }
-
     // Add the new subject to the database
     db.add subjects {
       data = {

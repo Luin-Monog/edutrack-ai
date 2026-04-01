@@ -1,5 +1,5 @@
 // Delete a subject with ownership checks
-query "subjects/delete" verb=DELETE {
+query "subjects/delete" verb=POST {
   api_group = "Subjects"
   auth = "user"
 
@@ -21,8 +21,8 @@ query "subjects/delete" verb=DELETE {
     }
 
     // Check ownership
-    precondition ($subject.user_id == $auth.id) {
-      error_type = "permissionerror"
+    precondition ($subject.user_id != $auth.id) {
+      error_type = "accessdenied"
       error = "Access denied."
     }
 
