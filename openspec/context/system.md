@@ -1,26 +1,15 @@
-# System Context
-## Overview
+# Contexto do Sistema
+## Visão Geral
 
-This project is an academic management backend built using XanoScript and Spec-
-Driven Development.
+Este projeto é um backend de gerenciamento acadêmico construído usando XanoScript e Desenvolvimento
+Orientado por Especificação.
 
-## Purpose
-Allow users to manage academic subjects and related data with proper ownership and access controls.
-## Core Entities
-- Users (native Xano authentication with roles and account membership)
-- Accounts (groups of users)
-- Subjects (academic disciplines owned by users with configurable visibility)
-- Event Logs (audit trail for user actions)
-- Agent Conversations/Messages (AI interaction logs)
-## Relationships
-- Users belong to Accounts
-- Subjects belong to Users and optionally linked to Accounts for sharing
-- Subjects have visibility levels: private (owner only), account (account members), public (all users)
-- All entities support audit logging via Event Logs
-## Security Model
-- Authentication via Xano auth tokens
-- Ownership-based access control for subjects
-- Role-based permissions within accounts
-- Data isolation between users and accounts
-## Expected Evolution
-The system will later include advanced analytics, automation workflows, and third-party integrations for academic management.
+## Propósito
+Permitir que os usuários gerenciem disciplinas acadêmicas e dados relacionados.
+## Entidades Principais
+- Usuários (autenticação nativa do Xano)
+- Disciplinas (disciplinas acadêmicas possuídas por usuários)
+## Relacionamentos
+- Cada disciplina pertence a um usuário.
+## Evolução Esperada
+O sistema incluirá posteriormente APIs, tarefas de automação e integrações.
