@@ -254,7 +254,7 @@
   {
     "id": 803017,
     "path": "tables/749168_subjects.xs",
-    "status": "unchanged",
+    "status": "changed",
     "type": "table",
     "staged": false,
     "sha256": "5123c68c7a9f86de2b1f4ff2057e59c47fc683b8afe315fe9e50ff465f5ca84f",
@@ -263,7 +263,7 @@
   {
     "id": 292310,
     "path": "functions/getting_started_template/267288_validate_subject_ownership.xs",
-    "status": "unchanged",
+    "status": "changed",
     "type": "function",
     "staged": false,
     "sha256": "2266eedf14dab241c964e7e49cc90a6676e5f76770c5e431ed9c97eb2ae24168",
@@ -272,7 +272,7 @@
   {
     "id": 395259,
     "path": "apis/subjects/api_group.xs",
-    "status": "unchanged",
+    "status": "changed",
     "type": "api_group",
     "staged": false,
     "sha256": "31cce1f3aeccd5d1bb9a72afd1eb460b7a11bcc6e31aa7381035d4b2544502bd",
