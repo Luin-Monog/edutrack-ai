@@ -1,5 +1,5 @@
 // Update a subject with ownership checks
-query "subjects/update" verb=POST {
+query "subjects/update" verb=PATCH {
   api_group = "Subjects"
   auth = "user"
 
@@ -16,29 +16,30 @@ query "subjects/update" verb=POST {
       field_name = "id"
       field_value = $input.subject_id
     } as $subject
-
+  
     // Check if subject exists
     precondition ($subject != null) {
       error_type = "notfound"
       error = "Subject not found."
     }
-
+  
     // Check ownership
-    precondition ($subject.user_id == $auth.id) {
+    precondition ($subject.user_id != $auth.id) {
       error_type = "accessdenied"
       error = "Access denied."
     }
-
+  
     // Update the subject with provided fields
-    db.update subjects
-      filter = {id: $input.subject_id}
+    db.patch subjects {
+      field_name = "id"
+      field_value = $input.subject_id
       data = {
-        name: $input.name
+        name       : $input.name
         description: $input.description
-        visibility: $input.visibility
+        visibility : $input.visibility
       }
-    as $updated
-
-    response = $updated
+    } as $updated
   }
+
+  response = $updated
 }

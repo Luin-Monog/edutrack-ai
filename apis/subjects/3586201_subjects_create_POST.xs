@@ -16,19 +16,18 @@ query "subjects/create" verb=POST {
       field_value = $auth.id
       output = ["account_id"]
     } as $user
-
+  
     // Add the new subject to the database
     db.add subjects {
       data = {
-        name: $input.name
+        name       : $input.name
         description: $input.description
-        user_id: $auth.id
-        account_id: $user.account_id
-        visibility: "private"
+        user_id    : $auth.id
+        account_id : $user.account_id
+        visibility : "private"
       }
     } as $subject
-
-    // Return the created subject
-    response = $subject
   }
+
+  response = $subject
 }

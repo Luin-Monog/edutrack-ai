@@ -9,11 +9,10 @@ query "subjects/summary" verb=GET {
   stack {
     // Get subjects for the user
     db.get subjects {
-      filter = {user_id: $auth.id}
+      field_name = "user_id"
+      field_value = $auth.id
     } as $subjects
-
-    response = {
-      total: $subjects.length
-    }
   }
+
+  response = {total: $subjects.length}
 }
