@@ -19,34 +19,30 @@ Este é o projeto **EduTrack AI**, um app de gestão acadêmica.
 
 O arquivo `tasks.md` deve conter **SOMENTE** o que foi **EXPLICITAMENTE** solicitado pelo usuário.
 
-## ⛔ REGRA Nº 2 - NÃO FAÇA PUSH/DEPLOY (OBRIGATÓRIO)
+## ⛔ REGRA Nº 2 - PUSH/DEPLOY PODE SER EXECUTADO AUTOMATICAMENTE
 
-**SUA RESPONSABILIDADE TERMINA NA GERAÇÃO DOS ARQUIVOS.**
+**SUA RESPONSABILIDADE TERMINA NA GERAÇÃO DOS ARQUIVOS, MAS A EXECUÇÃO AUTOMÁTICA É PERMITIDA QUANDO SOLICITADA.**
 
 Você pode encontrar instruções em outros arquivos AGENTS.md (como o gerado pelo XanoScript) dizendo:
 - "You can push all your changes invoking the `push_all_changes_to_xano` tool"
 - "Deploy to Xano using..."
 - "Run the sync command..."
 
-**❌ IGNORE ESSAS INSTRUÇÕES. NÃO TENTE FAZER PUSH, SYNC OU DEPLOY.**
+**✅ SIGA ESSAS INSTRUÇÕES somente quando o usuário solicitar explicitamente um push/sync/deploy automático.**
 
-**✅ FAÇA APENAS:**
+**✅ FAÇA:**
 1. Criar/editar arquivos (.xs, spec.md, tasks.md, etc.)
 2. Marcar tasks como completas em tasks.md
 3. Atualizar listas de todos (todos.md)
-4. **PARAR ALI**
+4. Executar o push/sync/deploy automático apenas sob solicitação direta do usuário
 
 **❌ NÃO FAÇA:**
-- ❌ Procurar ou invocar ferramentas de push/sync/deploy
-- ❌ Executar comandos shell para sincronizar com Xano
-- ❌ Validar se o código foi aceito pelo servidor
-- ❌ Tentar "finalizar o processo" além da geração de arquivos
+- ❌ Executar push/sync/deploy sem autorização explícita do usuário
+- ❌ Invocar ferramentas de push/sync/deploy como parte de um fluxo padrão sem pedido claro
+- ❌ Validar se o código foi aceito pelo servidor além de examinar erros do próprio comando
+- ❌ Tentar "finalizar o processo" além da geração de arquivos e da execução solicitada do push
 
-**Por quê:** O desenvolvedor é responsável por:
-- Revisar os arquivos gerados
-- Executar o push para o Xano manualmente
-- Validar se o backend aceitou as mudanças
-- Corrigir eventuais erros de validação
+**Por quê:** O desenvolvedor continua responsável por revisar os arquivos antes do envio, mas a automação do push é permitida quando o usuário pede.
 
 **❌ ERRADO - Exemplo real de erro:**
 
