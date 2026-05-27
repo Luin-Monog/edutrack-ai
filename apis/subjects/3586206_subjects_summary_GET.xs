@@ -13,7 +13,7 @@ query "subjects/summary" verb=GET {
     } as $subjects
 
     response = {
-      total: 0
+      total: $subjects.length
     }
   }
 }
