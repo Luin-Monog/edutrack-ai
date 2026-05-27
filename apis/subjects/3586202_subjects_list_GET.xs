@@ -11,7 +11,7 @@ query "subjects/list" verb=GET {
   stack {
     // Get subjects for the user
     db.get subjects {
-      field_name = "user_id"
+      field_name  = "user_id"
       field_value = $auth.id
     } as $subjects
   }

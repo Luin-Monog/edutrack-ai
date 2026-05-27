@@ -13,25 +13,25 @@ query "subjects/update" verb=PATCH {
   stack {
     // Get the subject
     db.get subjects {
-      field_name = "id"
+      field_name  = "id"
       field_value = $input.subject_id
     } as $subject
-  
+
     // Check if subject exists
     precondition ($subject != null) {
       error_type = "notfound"
-      error = "Subject not found."
+      error      = "Subject not found."
     }
-  
-    // Check ownership
+
+    // Check ownership — deny if the subject does not belong to the authenticated user
     precondition ($subject.user_id == $auth.id) {
       error_type = "accessdenied"
-      error = "Access denied."
+      error      = "Access denied."
     }
-  
+
     // Update the subject with provided fields
-    db.patch subjects {
-      field_name = "id"
+    db.edit subjects {
+      field_name  = "id"
       field_value = $input.subject_id
       data = {
         name       : $input.name

@@ -12,10 +12,7 @@ query "subjects/summary" verb=GET {
       field_name  = "user_id"
       field_value = $auth.id
     } as $subjects
-
-    // Count the total using array utility
-    set $total = $subjects | array.count
   }
 
-  response = {total: $total}
+  response = {total: $subjects}
 }

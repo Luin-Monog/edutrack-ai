@@ -5,9 +5,7 @@ query "subjects/search" verb=GET {
   auth = "user"
 
   input {
-    // Optional: partial text to match against subject name or description
     text? query
-    // Optional: when true, includes subjects that have overdue tasks even if name does not match
     bool? include_overdue
   }
 
@@ -24,30 +22,20 @@ query "subjects/search" verb=GET {
       field_value = $auth.id
     } as $user_tasks
 
-    // 3. Resolve effective flag (default false when not supplied)
-    set $flag_overdue = ($input.include_overdue == true)
-
-    // 4. Call the Python search sidecar via HTTP.
-    //    The sidecar (sidecar_search_api.py) runs on port 8787 and wraps scripts/subject_search.py.
-    //    SUBJECT_SEARCH_URL env var should be set to: http://localhost:8787/search
+    // 3. Call the Python search sidecar via HTTP.
+    //    The sidecar (sidecar_search_api.py) runs on port 8787.
+    //    Set SUBJECT_SEARCH_URL env var to: http://localhost:8787/search
     external.request {
-      method  = "POST"
-      url     = $env.SUBJECT_SEARCH_URL
-      headers = {"Content-Type": "application/json"}
-      body    = {
+      method = "POST"
+      url    = $env.SUBJECT_SEARCH_URL
+      body   = {
         subjects        : $user_subjects
         tasks           : $user_tasks
-        query           : ($input.query ?? "")
-        include_overdue : $flag_overdue
+        query           : $input.query
+        include_overdue : $input.include_overdue
         current_date    : ""
       }
     } as $search_response
-
-    // 5. Guard: surface any error returned by the sidecar
-    precondition ($search_response.error == null) {
-      error_type = "internal"
-      error      = "Subject search service returned an error."
-    }
   }
 
   response = $search_response
