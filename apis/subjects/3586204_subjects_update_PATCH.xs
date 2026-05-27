@@ -24,7 +24,7 @@ query "subjects/update" verb=PATCH {
     }
   
     // Check ownership
-    precondition ($subject.user_id != $auth.id) {
+    precondition ($subject.user_id == $auth.id) {
       error_type = "accessdenied"
       error = "Access denied."
     }

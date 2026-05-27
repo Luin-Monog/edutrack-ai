@@ -1,4 +1,4 @@
-// Get summary statistics for subjects
+// Get summary statistics for subjects of the authenticated user
 query "subjects/summary" verb=GET {
   api_group = "Subjects"
   auth = "user"
@@ -7,12 +7,15 @@ query "subjects/summary" verb=GET {
   }
 
   stack {
-    // Get subjects for the user
+    // Get all subjects for the user
     db.get subjects {
-      field_name = "user_id"
+      field_name  = "user_id"
       field_value = $auth.id
     } as $subjects
+
+    // Count the total using array utility
+    set $total = $subjects | array.count
   }
 
-  response = {total: $subjects.length}
+  response = {total: $total}
 }
