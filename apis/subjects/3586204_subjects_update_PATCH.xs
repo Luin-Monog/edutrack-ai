@@ -24,20 +24,20 @@ query "subjects/update" verb=POST {
     }
 
     // Check ownership
-    precondition ($subject.user_id != $auth.id) {
+    precondition ($subject.user_id == $auth.id) {
       error_type = "accessdenied"
       error = "Access denied."
     }
 
     // Update the subject with provided fields
-    db.update subjects {
+    db.update subjects
       filter = {id: $input.subject_id}
       data = {
         name: $input.name
         description: $input.description
         visibility: $input.visibility
       }
-    } as $updated
+    as $updated
 
     response = $updated
   }
