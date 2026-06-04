@@ -9,10 +9,10 @@ query "subjects/list" verb=GET {
   }
 
   stack {
-    // Get subjects for the user
-    db.get subjects {
-      field_name  = "user_id"
-      field_value = $auth.id
+    // Get all subjects belonging to the authenticated user
+    db.query subjects {
+      where = $db.subjects.user_id == $auth.id
+      return = {type: "list"}
     } as $subjects
   }
 

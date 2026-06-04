@@ -12,11 +12,11 @@ function "Subjects/validate_subject_ownership" {
       output = ["user_id"]
     } as $subject
   
-    precondition ($subject == null) {
+    precondition ($subject != null) {
       error = "Subject not found."
     }
-  
-    precondition ($subject.user_id != $input.user_id) {
+
+    precondition ($subject.user_id == $input.user_id) {
       error = "Access denied."
     }
   }

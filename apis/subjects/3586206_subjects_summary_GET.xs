@@ -7,12 +7,12 @@ query "subjects/summary" verb=GET {
   }
 
   stack {
-    // Get all subjects for the user
-    db.get subjects {
-      field_name  = "user_id"
-      field_value = $auth.id
-    } as $subjects
+    // Count all subjects belonging to the authenticated user
+    db.query subjects {
+      where = $db.subjects.user_id == $auth.id
+      return = {type: "count"}
+    } as $total
   }
 
-  response = {total: $subjects}
+  response = {total: $total}
 }

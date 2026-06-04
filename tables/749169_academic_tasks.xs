@@ -12,11 +12,16 @@ table academic_tasks {
     int subject_id {
       table = "subjects"
     }
+
+    int user_id {
+      table = "user"
+    }
   }
 
   index = [
     {type: "primary", field: [{name: "id"}]}
     {type: "btree", field: [{name: "subject_id"}]}
+    {type: "btree", field: [{name: "user_id"}]}
     {type: "btree", field: [{name: "due_date"}]}
   ]
 

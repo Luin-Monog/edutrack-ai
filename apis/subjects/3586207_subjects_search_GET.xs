@@ -11,15 +11,15 @@ query "subjects/search" verb=GET {
 
   stack {
     // 1. Fetch all subjects belonging to the authenticated user
-    db.get subjects {
-      field_name  = "user_id"
-      field_value = $auth.id
+    db.query subjects {
+      where = $db.subjects.user_id == $auth.id
+      return = {type: "list"}
     } as $user_subjects
 
     // 2. Fetch all academic tasks for the authenticated user (drives overdue detection)
-    db.get academic_tasks {
-      field_name  = "user_id"
-      field_value = $auth.id
+    db.query academic_tasks {
+      where = $db.academic_tasks.user_id == $auth.id
+      return = {type: "list"}
     } as $user_tasks
 
     // 3. Call the Python search sidecar via HTTP.
