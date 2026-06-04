@@ -27,7 +27,7 @@ query "subjects/delete" verb=DELETE {
     }
 
     // Delete the subject
-    db.delete subjects {
+    db.del subjects {
       field_name  = "id"
       field_value = $input.subject_id
     }

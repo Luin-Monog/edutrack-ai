@@ -24,16 +24,17 @@ query "subjects/search" verb=GET {
 
     // Call the Python search sidecar.
     // Set env var SUBJECT_SEARCH_URL to: http://localhost:8787/search
-    external.request {
-      method = "POST"
+    api.request {
       url    = $env.SUBJECT_SEARCH_URL
-      body   = {
+      method = "POST"
+      params = {
         subjects        : $user_subjects
         tasks           : $user_tasks
         query           : $input.query
         include_overdue : $input.include_overdue
         current_date    : ""
       }
+      timeout = 25
     } as $search_response
   }
 
