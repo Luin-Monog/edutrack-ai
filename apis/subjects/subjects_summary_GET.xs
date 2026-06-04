@@ -9,7 +9,7 @@ query "subjects/summary" verb=GET {
   stack {
     // Count all subjects belonging to the authenticated user
     db.query subjects {
-      where  = $db.subjects.user_id == $auth.id
+      where = $db.subjects.user_id == $auth.id
       return = {type: "count"}
     } as $total
   }

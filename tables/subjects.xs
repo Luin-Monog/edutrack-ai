@@ -8,19 +8,18 @@ table subjects {
     timestamp created_at?=now
     text name filters=trim
     text? description
-
     int user_id {
       table = "user"
     }
-
+  
     int? account_id {
       table = "account"
     }
-
-    enum visibility?="private" {
+  
+    enum visibility?=private {
       values = ["private", "account", "public"]
     }
-
+  
     object? metadata {
       schema {
         text? category

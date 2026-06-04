@@ -8,12 +8,11 @@ table academic_tasks {
     text title filters=trim
     text? description
     date due_date
-    text status?="pending" filters=trim
-
+    text status?=pending filters=trim
     int subject_id {
       table = "subjects"
     }
-
+  
     int user_id {
       table = "user"
     }

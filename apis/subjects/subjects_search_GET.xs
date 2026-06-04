@@ -12,28 +12,29 @@ query "subjects/search" verb=GET {
   stack {
     // Fetch all subjects belonging to the authenticated user
     db.query subjects {
-      where  = $db.subjects.user_id == $auth.id
+      where = $db.subjects.user_id == $auth.id
       return = {type: "list"}
     } as $user_subjects
-
+  
     // Fetch all academic tasks belonging to the authenticated user
     db.query academic_tasks {
-      where  = $db.academic_tasks.user_id == $auth.id
+      where = $db.academic_tasks.user_id == $auth.id
       return = {type: "list"}
     } as $user_tasks
-
+  
     // Call the Python search sidecar.
     // Set env var SUBJECT_SEARCH_URL to: http://localhost:8787/search
     api.request {
-      url    = $env.SUBJECT_SEARCH_URL
+      url = $env.SUBJECT_SEARCH_URL
       method = "POST"
       params = {
-        subjects        : $user_subjects
-        tasks           : $user_tasks
-        query           : $input.query
-        include_overdue : $input.include_overdue
-        current_date    : ""
+        subjects       : $user_subjects
+        tasks          : $user_tasks
+        query          : $input.query
+        include_overdue: $input.include_overdue
+        current_date   : ""
       }
+    
       timeout = 25
     } as $search_response
   }
