@@ -1,5 +1,5 @@
-// Search subjects by name/description OR by presence of overdue academic tasks.
-// Calls the Python sidecar (sidecar_search_api.py) via external.request for complex filtering.
+// Search subjects by name/description or by presence of overdue academic tasks.
+// Delegates complex filtering to the Python sidecar (sidecar_search_api.py) via HTTP.
 query "subjects/search" verb=GET {
   api_group = "Subjects"
   auth = "user"
@@ -10,21 +10,20 @@ query "subjects/search" verb=GET {
   }
 
   stack {
-    // 1. Fetch all subjects belonging to the authenticated user
+    // Fetch all subjects belonging to the authenticated user
     db.query subjects {
-      where = $db.subjects.user_id == $auth.id
+      where  = $db.subjects.user_id == $auth.id
       return = {type: "list"}
     } as $user_subjects
 
-    // 2. Fetch all academic tasks for the authenticated user (drives overdue detection)
+    // Fetch all academic tasks belonging to the authenticated user
     db.query academic_tasks {
-      where = $db.academic_tasks.user_id == $auth.id
+      where  = $db.academic_tasks.user_id == $auth.id
       return = {type: "list"}
     } as $user_tasks
 
-    // 3. Call the Python search sidecar via HTTP.
-    //    The sidecar (sidecar_search_api.py) runs on port 8787.
-    //    Set SUBJECT_SEARCH_URL env var to: http://localhost:8787/search
+    // Call the Python search sidecar.
+    // Set env var SUBJECT_SEARCH_URL to: http://localhost:8787/search
     external.request {
       method = "POST"
       url    = $env.SUBJECT_SEARCH_URL

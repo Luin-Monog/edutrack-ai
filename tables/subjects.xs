@@ -8,24 +8,20 @@ table subjects {
     timestamp created_at?=now
     text name filters=trim
     text? description
-  
-    // Owner of the subject
+
     int user_id {
       table = "user"
     }
-  
-    // Account for access control and sharing
-    int account_id? {
+
+    int? account_id {
       table = "account"
     }
-  
-    // Visibility level for access control
-    enum visibility? {
+
+    enum visibility?="private" {
       values = ["private", "account", "public"]
     }
-  
-    // Additional fields for future automations
-    object metadata? {
+
+    object? metadata {
       schema {
         text? category
         text? code

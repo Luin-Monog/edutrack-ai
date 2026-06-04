@@ -1,4 +1,4 @@
-// Delete a subject with ownership checks
+// Delete a subject with ownership verification
 query "subjects/delete" verb=DELETE {
   api_group = "Subjects"
   auth = "user"
@@ -8,19 +8,19 @@ query "subjects/delete" verb=DELETE {
   }
 
   stack {
-    // Get the subject
+    // Fetch the subject
     db.get subjects {
       field_name  = "id"
       field_value = $input.subject_id
     } as $subject
 
-    // Check if subject exists
+    // Ensure the subject exists
     precondition ($subject != null) {
       error_type = "notfound"
       error      = "Subject not found."
     }
 
-    // Check ownership — deny if the subject does not belong to the authenticated user
+    // Ensure the subject belongs to the authenticated user
     precondition ($subject.user_id == $auth.id) {
       error_type = "accessdenied"
       error      = "Access denied."

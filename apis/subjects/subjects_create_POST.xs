@@ -10,14 +10,14 @@ query "subjects/create" verb=POST {
   }
 
   stack {
-    // Get the user's account
+    // Get the user record to retrieve account_id
     db.get user {
-      field_name = "id"
+      field_name  = "id"
       field_value = $auth.id
-      output = ["account_id"]
+      output      = ["account_id"]
     } as $user
 
-    // Add the new subject to the database
+    // Create the new subject
     db.add subjects {
       data = {
         name       : $input.name

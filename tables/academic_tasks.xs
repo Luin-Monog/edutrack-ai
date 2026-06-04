@@ -8,7 +8,8 @@ table academic_tasks {
     text title filters=trim
     text? description
     date due_date
-    text status filters=trim
+    text status?="pending" filters=trim
+
     int subject_id {
       table = "subjects"
     }
@@ -23,6 +24,7 @@ table academic_tasks {
     {type: "btree", field: [{name: "subject_id"}]}
     {type: "btree", field: [{name: "user_id"}]}
     {type: "btree", field: [{name: "due_date"}]}
+    {type: "btree", field: [{name: "status"}]}
   ]
 
   tags = ["academic-tasks"]
