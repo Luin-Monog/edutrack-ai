@@ -131,7 +131,7 @@ with tab_lista:
                         )
                         if new_status != status:
                             try:
-                                api.tasks_update(t["id"], status=new_status)
+                                api.tasks_update(t["id"], title=t.get("title"), status=new_status)
                                 load_data()
                                 st.rerun()
                             except Exception as e:

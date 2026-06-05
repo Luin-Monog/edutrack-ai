@@ -225,10 +225,12 @@ def tasks_create(
     return _handle(r)
 
 
-def tasks_update(task_id: int, **kwargs) -> Dict:
+def tasks_update(task_id: int, title: Optional[str] = None, **kwargs) -> Dict:
+    # Xano requires title in updates even if we're only changing other fields
+    payload = {k: v for k, v in {**kwargs, "title": title}.items() if v is not None}
     r = requests.patch(
         f"{_base('TASKS')}/academic_tasks/update",
-        json={"task_id": task_id, **kwargs},
+        json={"task_id": task_id, **payload},
         headers=_headers(),
         timeout=15,
     )
@@ -238,7 +240,7 @@ def tasks_update(task_id: int, **kwargs) -> Dict:
 def tasks_complete(task_id: int) -> Dict:
     r = requests.patch(
         f"{_base('TASKS')}/academic_tasks/complete",
-        json={"task_id": task_id},
+        json={"task_id": task_id, "status": "completed"},
         headers=_headers(),
         timeout=15,
     )
