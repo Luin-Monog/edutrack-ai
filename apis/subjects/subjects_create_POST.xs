@@ -8,6 +8,7 @@ query "subjects/create" verb=POST {
     text? description
     text? professor filters=trim
     text? schedule filters=trim
+    text? semester filters=trim
     text? visibility
   }
 
@@ -26,6 +27,7 @@ query "subjects/create" verb=POST {
         description: $input.description
         professor  : $input.professor
         schedule   : $input.schedule
+        semester   : $input.semester
         user_id    : $auth.id
         account_id : $user.account_id
         visibility : "private"

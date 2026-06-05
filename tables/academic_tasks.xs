@@ -9,6 +9,9 @@ table academic_tasks {
     text? description
     date due_date
     text status?=pending filters=trim
+    enum priority?=media {
+      values = ["baixa", "media", "alta"]
+    }
     int subject_id {
       table = "subjects"
     }

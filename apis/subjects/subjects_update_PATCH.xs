@@ -9,6 +9,8 @@ query "subjects/update" verb=PATCH {
     text? description
     text? professor filters=trim
     text? schedule filters=trim
+    text? semester filters=trim
+    bool? archived
     text? visibility
   }
 
@@ -40,6 +42,8 @@ query "subjects/update" verb=PATCH {
         description: $input.description
         professor  : $input.professor
         schedule   : $input.schedule
+        semester   : $input.semester
+        archived   : $input.archived
         visibility : $input.visibility
       }
     } as $updated

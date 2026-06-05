@@ -71,6 +71,36 @@ def auth_me() -> Dict:
     return _handle(r)
 
 
+# ── Password reset ────────────────────────────────────────────────────────────
+
+def auth_request_reset(email: str) -> Dict:
+    r = requests.get(
+        f"{_base('AUTH')}/reset/request-reset-link",
+        params={"email": email},
+        timeout=15,
+    )
+    return _handle(r)
+
+
+def auth_magic_link_login(magic_token: str, email: str) -> Dict:
+    r = requests.post(
+        f"{_base('AUTH')}/reset/magic-link-login",
+        json={"magic_token": magic_token, "email": email},
+        timeout=15,
+    )
+    return _handle(r)
+
+
+def auth_update_password(password: str, confirm_password: str, temp_token: str) -> Dict:
+    r = requests.post(
+        f"{_base('AUTH')}/reset/update_password",
+        json={"password": password, "confirm_password": confirm_password},
+        headers={"Authorization": f"Bearer {temp_token}"},
+        timeout=15,
+    )
+    return _handle(r)
+
+
 # ── Profile ────────────────────────────────────────────────────────────────────
 
 def user_edit_profile(name: Optional[str] = None, email: Optional[str] = None) -> Dict:
@@ -104,6 +134,7 @@ def subjects_create(
     description: Optional[str] = None,
     professor: Optional[str] = None,
     schedule: Optional[str] = None,
+    visibility: str = "private",
 ) -> Dict:
     r = requests.post(
         f"{_base('SUBJECTS')}/subjects/create",
@@ -112,6 +143,7 @@ def subjects_create(
             "description": description,
             "professor": professor,
             "schedule": schedule,
+            "visibility": visibility,
         },
         headers=_headers(),
         timeout=15,
@@ -155,6 +187,7 @@ def tasks_list() -> List[Dict]:
     try:
         r = requests.get(
             f"{_base('TASKS')}/academic_tasks/list",
+            params={"subject_id": 0, "status": "all"},
             headers=_headers(),
             timeout=15,
         )

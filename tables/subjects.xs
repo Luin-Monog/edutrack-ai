@@ -10,6 +10,8 @@ table subjects {
     text? description
     text? professor filters=trim
     text? schedule filters=trim
+    text? semester filters=trim
+    bool archived?=false
     int user_id {
       table = "user"
     }

@@ -9,6 +9,7 @@ query "academic_tasks/update" verb=PATCH {
     text? description
     date? due_date
     text? status filters=trim
+    text? priority filters=trim
   }
 
   stack {
@@ -16,17 +17,17 @@ query "academic_tasks/update" verb=PATCH {
       field_name = "id"
       field_value = $input.task_id
     } as $task
-
+  
     precondition ($task != null) {
       error_type = "notfound"
       error = "Task not found."
     }
-
+  
     precondition ($task.user_id == $auth.id) {
       error_type = "accessdenied"
       error = "Access denied."
     }
-
+  
     db.edit academic_tasks {
       field_name = "id"
       field_value = $input.task_id
@@ -35,6 +36,7 @@ query "academic_tasks/update" verb=PATCH {
         description: $input.description
         due_date   : $input.due_date
         status     : $input.status
+        priority   : $input.priority
       }
     } as $updated
   }

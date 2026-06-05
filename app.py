@@ -2,46 +2,16 @@ import streamlit as st
 from datetime import datetime, timezone
 
 import utils.xano_client as api
+from utils.theme import UNDERDARK_CSS, SPORE_DIVIDER
 
-# ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="EduTrack AI",
-    page_icon="🎓",
+    page_icon="🍄",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── Global CSS ─────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
-[data-testid="stSidebar"] * { color: #e2e8f0 !important; }
-
-.subject-card {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border: 1px solid #334155; border-radius: 12px;
-    padding: 1rem 1.25rem; margin-bottom: .75rem;
-}
-.subject-card h4 { color: #e2e8f0; margin: 0 0 .3rem; font-size: 1rem; }
-.subject-card p  { color: #94a3b8; margin: 0; font-size: .85rem; }
-.tag-overdue { background:#7f1d1d; color:#fca5a5; border-radius:6px; padding:2px 8px; font-size:.75rem; font-weight:600; }
-.tag-ok      { background:#14532d; color:#86efac; border-radius:6px; padding:2px 8px; font-size:.75rem; font-weight:600; }
-.tag-pending { background:#1e3a5f; color:#93c5fd; border-radius:6px; padding:2px 8px; font-size:.75rem; font-weight:600; }
-
-[data-testid="metric-container"] {
-    background:#1e293b; border-radius:10px;
-    padding:.75rem 1rem; border:1px solid #334155;
-}
-.auth-box {
-    max-width: 420px; margin: 4rem auto 0;
-    background: #1e293b; border: 1px solid #334155;
-    border-radius: 16px; padding: 2rem;
-}
-</style>
-""", unsafe_allow_html=True)
+st.markdown(UNDERDARK_CSS, unsafe_allow_html=True)
 
 
 # ── Auth helpers ───────────────────────────────────────────────────────────────
@@ -53,7 +23,7 @@ def do_login(email: str, password: str) -> None:
         st.session_state["user_id"] = data.get("user_id")
         st.rerun()
     except Exception as e:
-        st.error(f"Erro ao entrar: {e}")
+        st.error(f"Credenciais inválidas: {e}")
 
 
 def do_signup(name: str, email: str, password: str) -> None:
@@ -69,63 +39,135 @@ def do_signup(name: str, email: str, password: str) -> None:
 # ── Login / Signup screen ──────────────────────────────────────────────────────
 
 def show_auth_screen() -> None:
-    st.markdown(
-        "<div style='text-align:center;margin-top:2rem'>"
-        "<h1>🎓 EduTrack AI</h1>"
-        "<p style='color:#94a3b8'>Seu assistente acadêmico inteligente</p>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"]        { display: none; }
+    [data-testid="collapsedControl"] { display: none; }
+    </style>
+    """, unsafe_allow_html=True)
 
-    tab_login, tab_signup = st.tabs(["Entrar", "Criar Conta"])
+    # Hero
+    st.markdown("""
+    <div style="text-align:center; padding: 3rem 1rem 1.5rem;">
+        <div style="font-size:4rem; margin-bottom:.5rem; filter: drop-shadow(0 0 20px #8b5cf6);">🍄</div>
+        <h1 style="font-family:'Cinzel',serif; font-size:2.8rem; color:#c084fc;
+                   text-shadow: 0 0 30px rgba(139,92,246,0.8), 0 0 60px rgba(34,211,238,0.3);
+                   letter-spacing:4px; margin:0;">EduTrack AI</h1>
+        <p style="color:#a78bfa; font-size:1rem; margin-top:.5rem; letter-spacing:1px;">
+            ✦ Seu reino acadêmico nas profundezas ✦
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    with tab_login:
-        with st.form("form_login"):
-            st.subheader("Bem-vindo de volta!")
-            email = st.text_input("E-mail", placeholder="seu@email.com")
-            password = st.text_input("Senha", type="password")
-            submitted = st.form_submit_button("Entrar", use_container_width=True, type="primary")
-        if submitted:
-            if email and password:
-                do_login(email, password)
-            else:
-                st.warning("Preencha e-mail e senha.")
+    st.markdown(SPORE_DIVIDER, unsafe_allow_html=True)
 
-    with tab_signup:
-        with st.form("form_signup"):
-            st.subheader("Crie sua conta")
-            name = st.text_input("Nome completo")
-            email_s = st.text_input("E-mail", placeholder="seu@email.com", key="signup_email")
-            password_s = st.text_input("Senha", type="password", key="signup_pass")
-            submitted_s = st.form_submit_button("Criar Conta", use_container_width=True, type="primary")
-        if submitted_s:
-            if name and email_s and password_s:
-                do_signup(name, email_s, password_s)
-            else:
-                st.warning("Preencha todos os campos.")
+    col_l, col_form, col_r = st.columns([1, 2, 1])
+    with col_form:
+        tab_login, tab_signup = st.tabs(["🔮 Entrar", "🌱 Criar Conta"])
+
+        # ── Login
+        with tab_login:
+            st.markdown("<br>", unsafe_allow_html=True)
+            with st.form("form_login"):
+                email = st.text_input("E-mail", placeholder="seu@email.com", label_visibility="visible")
+                password = st.text_input("Senha", type="password", label_visibility="visible")
+                submitted = st.form_submit_button("⚡ Entrar no Reino", use_container_width=True, type="primary")
+            if submitted:
+                if email and password:
+                    do_login(email, password)
+                else:
+                    st.warning("Preencha e-mail e senha.")
+
+            with st.expander("🔑 Esqueci minha senha"):
+                st.markdown("**Passo 1 — Solicitar código**")
+                col_re, col_rb = st.columns([3, 1])
+                with col_re:
+                    reset_email = st.text_input("E-mail da conta", placeholder="seu@email.com", key="reset_email")
+                with col_rb:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("Enviar", use_container_width=True):
+                        if reset_email.strip():
+                            try:
+                                api.auth_request_reset(reset_email.strip())
+                                st.success("Código enviado! Verifique sua caixa de entrada.")
+                            except Exception as e:
+                                st.error(f"Erro: {e}")
+                        else:
+                            st.warning("Digite seu e-mail.")
+
+                st.markdown("---")
+                st.markdown("**Passo 2 — Criar nova senha**")
+                st.caption("Cole o código recebido por e-mail.")
+                with st.form("form_reset_password"):
+                    r_email = st.text_input("E-mail", key="r_email")
+                    r_code = st.text_input("Código do e-mail")
+                    r_pass = st.text_input("Nova senha (mín. 8 car.)", type="password")
+                    r_confirm = st.text_input("Confirmar senha", type="password")
+                    reset_submitted = st.form_submit_button("Redefinir senha", type="primary", use_container_width=True)
+                if reset_submitted:
+                    if not all([r_email, r_code, r_pass, r_confirm]):
+                        st.warning("Preencha todos os campos.")
+                    elif len(r_pass) < 8:
+                        st.warning("Mínimo 8 caracteres.")
+                    elif r_pass != r_confirm:
+                        st.error("As senhas não coincidem.")
+                    else:
+                        try:
+                            login_data = api.auth_magic_link_login(r_code.strip(), r_email.strip())
+                            api.auth_update_password(r_pass, r_confirm, login_data["authToken"])
+                            st.success("Senha redefinida! Faça login com a nova senha.")
+                        except Exception as e:
+                            st.error(f"Erro: {e}")
+
+        # ── Signup
+        with tab_signup:
+            st.markdown("<br>", unsafe_allow_html=True)
+            with st.form("form_signup"):
+                name = st.text_input("Nome completo")
+                email_s = st.text_input("E-mail", placeholder="seu@email.com", key="signup_email")
+                password_s = st.text_input("Senha (mín. 8 car.)", type="password", key="signup_pass")
+                submitted_s = st.form_submit_button("🌱 Criar minha conta", use_container_width=True, type="primary")
+            if submitted_s:
+                if name and email_s and password_s:
+                    do_signup(name, email_s, password_s)
+                else:
+                    st.warning("Preencha todos os campos.")
+
+    st.markdown("""
+    <p style="text-align:center; color:#3b1f72; font-size:.8rem; margin-top:3rem;">
+        EduTrack AI · Reino Fungi & Underdark · Innovation Lab
+    </p>
+    """, unsafe_allow_html=True)
 
 
 # ── Dashboard ──────────────────────────────────────────────────────────────────
 
 def show_dashboard() -> None:
-    # Sidebar
     with st.sidebar:
-        st.markdown("## 🎓 EduTrack AI")
+        st.markdown("""
+        <div style="text-align:center; padding:.5rem 0 1rem;">
+            <div style="font-size:2rem; filter:drop-shadow(0 0 10px #8b5cf6);">🍄</div>
+            <div style="font-family:'Cinzel',serif; color:#c084fc; font-size:.9rem; letter-spacing:2px;">EduTrack AI</div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown("---")
-        user_name = st.session_state.get("user_name", "Usuário")
-        st.markdown(f"👤 **{user_name}**")
+        user_name = st.session_state.get("user_name", "Aventureiro")
+        st.markdown(f"<div style='color:#a78bfa; font-size:.85rem;'>👤 {user_name}</div>", unsafe_allow_html=True)
         st.markdown("---")
-        st.caption("Innovation Lab · v0.3.0")
+        st.caption("Innovation Lab · v0.4.0")
         st.markdown("---")
         if st.button("🚪 Sair", use_container_width=True):
             st.session_state.clear()
             st.rerun()
 
-    st.title("🏠 Dashboard")
-    st.markdown("Bem-vindo ao **EduTrack AI** — seu assistente acadêmico inteligente.")
+    st.markdown("""
+    <h1 style="display:flex; align-items:center; gap:.75rem;">
+        <span style="font-size:2rem; filter:drop-shadow(0 0 12px #22d3ee);">🏠</span> Dashboard
+    </h1>
+    """, unsafe_allow_html=True)
+    st.markdown(f"<p style='color:#a78bfa'>Bem-vindo de volta, <b style='color:#c084fc'>{st.session_state.get('user_name','Aventureiro')}</b> — seu reino aguarda.</p>", unsafe_allow_html=True)
 
-    # Load data
-    with st.spinner("Carregando dados…"):
+    with st.spinner("Carregando dados do reino…"):
         try:
             subjects = api.subjects_list()
         except Exception:
@@ -135,6 +177,7 @@ def show_dashboard() -> None:
         except Exception:
             tasks = []
 
+    active_subjects = [s for s in subjects if not s.get("archived", False)]
     today = datetime.now(tz=timezone.utc)
 
     def _due(t: dict):
@@ -150,78 +193,97 @@ def show_dashboard() -> None:
             except Exception:
                 return None
 
-    pending_tasks = [t for t in tasks if t.get("status") != "completed"]
-    overdue_tasks = [t for t in pending_tasks if (d := _due(t)) and d < today]
+    pending_tasks   = [t for t in tasks if t.get("status") != "completed"]
+    overdue_tasks   = [t for t in pending_tasks if (d := _due(t)) and d < today]
     completed_tasks = [t for t in tasks if t.get("status") == "completed"]
-    progress_pct = int(len(completed_tasks) / len(tasks) * 100) if tasks else 0
+    progress_pct    = int(len(completed_tasks) / len(tasks) * 100) if tasks else 0
 
     # Metrics
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("📚 Disciplinas", len(subjects))
-    col2.metric(
-        "⏰ Tarefas Atrasadas",
-        len(overdue_tasks),
-        delta=f"-{len(overdue_tasks)} em atraso" if overdue_tasks else None,
-        delta_color="inverse",
-    )
-    col3.metric("📝 Tarefas Pendentes", len(pending_tasks))
-    col4.metric("✅ Progresso Geral", f"{progress_pct}%")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("🍄 Disciplinas Ativas", len(active_subjects))
+    c2.metric("⏰ Atrasadas", len(overdue_tasks),
+              delta=f"-{len(overdue_tasks)}" if overdue_tasks else None, delta_color="inverse")
+    c3.metric("📝 Pendentes", len(pending_tasks))
+    c4.metric("✨ Progresso", f"{progress_pct}%")
 
-    st.markdown("---")
+    st.markdown(SPORE_DIVIDER, unsafe_allow_html=True)
 
-    # Subjects with overdue tasks
     col_left, col_right = st.columns(2)
 
+    # Subjects with overdue tasks
     with col_left:
-        st.subheader("Disciplinas com Tarefas Atrasadas")
-        overdue_by_subject: dict[int, int] = {}
+        st.markdown("### 🔥 Disciplinas com Tarefas Atrasadas")
+        overdue_by_subj: dict[int, int] = {}
         for t in overdue_tasks:
             sid = t.get("subject_id")
             if sid:
-                overdue_by_subject[sid] = overdue_by_subject.get(sid, 0) + 1
+                overdue_by_subj[sid] = overdue_by_subj.get(sid, 0) + 1
 
-        subjects_with_overdue = [s for s in subjects if s.get("id") in overdue_by_subject]
-
-        if subjects_with_overdue:
-            for s in subjects_with_overdue:
-                n = overdue_by_subject[s["id"]]
+        behind = [s for s in active_subjects if s.get("id") in overdue_by_subj]
+        if behind:
+            for s in behind:
+                n = overdue_by_subj[s["id"]]
                 st.markdown(
-                    f'<div class="subject-card"><h4>{s["name"]} '
-                    f'<span class="tag-overdue">⚠ {n} atrasada{"s" if n > 1 else ""}</span></h4>'
-                    f'<p>{s.get("professor","") or s.get("description","")}</p></div>',
+                    f'<div class="fungi-card"><h4>{s["name"]} '
+                    f'<span class="badge-overdue">⚠ {n} atrasada{"s" if n>1 else ""}</span></h4>'
+                    f'<p>{"📅 " + s.get("semester","") if s.get("semester") else ""}'
+                    f'{"  ·  👤 " + s.get("professor","") if s.get("professor") else ""}</p></div>',
                     unsafe_allow_html=True,
                 )
         else:
-            st.success("🎉 Nenhuma disciplina com tarefas atrasadas!")
+            st.success("✨ Nenhuma disciplina com tarefas atrasadas!")
 
+    # Upcoming tasks
     with col_right:
-        st.subheader("Próximas Tarefas")
+        st.markdown("### 🌙 Próximas Tarefas")
         upcoming = sorted(
-            [t for t in pending_tasks if _due(t) and _due(t) >= today],
+            [t for t in pending_tasks if (d := _due(t)) and d >= today],
             key=lambda t: _due(t),
         )[:5]
+        subj_map = {s["id"]: s["name"] for s in subjects}
 
         if upcoming:
             for t in upcoming:
                 d = _due(t)
                 due_str = d.strftime("%d/%m/%Y") if d else "—"
-                subj = next((s["name"] for s in subjects if s.get("id") == t.get("subject_id")), "—")
+                subj_name = subj_map.get(t.get("subject_id"), "—")
+                prio = t.get("priority", "media")
+                prio_badge = f'<span class="badge-{prio}">{"🔴" if prio=="alta" else "🟠" if prio=="media" else "🟢"}</span>'
                 st.markdown(
-                    f'<div class="subject-card">'
-                    f'<h4><span class="tag-pending">📅 {due_str}</span> {t["title"]}</h4>'
-                    f'<p>📚 {subj}</p></div>',
+                    f'<div class="fungi-card"><h4>{prio_badge} {t["title"]}'
+                    f' <span class="badge-pending">📅 {due_str}</span></h4>'
+                    f'<p>📚 {subj_name}</p></div>',
                     unsafe_allow_html=True,
                 )
         else:
-            st.info("Nenhuma tarefa próxima.")
+            st.info("🌿 Nenhuma tarefa próxima.")
+
+    # Progress per active subject
+    if tasks and active_subjects:
+        st.markdown(SPORE_DIVIDER, unsafe_allow_html=True)
+        st.markdown("### 🌿 Progresso por Disciplina")
+        cols = st.columns(min(len(active_subjects), 3))
+        for i, s in enumerate(active_subjects):
+            s_tasks = [t for t in tasks if t.get("subject_id") == s["id"]]
+            s_done  = [t for t in s_tasks if t.get("status") == "completed"]
+            pct = int(len(s_done) / len(s_tasks) * 100) if s_tasks else 0
+            with cols[i % 3]:
+                st.markdown(f"**{s['name']}**")
+                st.progress(pct / 100)
+                st.caption(f"{len(s_done)}/{len(s_tasks)} concluídas · {pct}%")
 
     # Welcome for new users
-    if not subjects and not tasks:
-        st.markdown("---")
-        st.info(
-            "👋 Parece que você ainda não tem disciplinas ou tarefas cadastradas. "
-            "Acesse **Disciplinas** no menu lateral para começar!"
-        )
+    if not subjects:
+        st.markdown(SPORE_DIVIDER, unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center; padding:2rem; background:linear-gradient(135deg,#1e1438,#120d24);
+                    border:1px solid #3b1f72; border-radius:16px; margin:1rem 0;">
+            <div style="font-size:3rem; filter:drop-shadow(0 0 16px #8b5cf6);">🍄</div>
+            <h2 style="color:#c084fc; font-family:'Cinzel',serif;">Bem-vindo ao Reino!</h2>
+            <p style="color:#a78bfa;">Seu reino acadêmico está vazio. Comece criando sua primeira disciplina.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.page_link("pages/1_📚_Disciplinas.py", label="🌱 Criar primeira disciplina", icon="📚")
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
@@ -229,11 +291,10 @@ def show_dashboard() -> None:
 if "token" not in st.session_state:
     show_auth_screen()
 else:
-    # Try to load user name once per session
     if "user_name" not in st.session_state:
         try:
             me = api.auth_me()
-            st.session_state["user_name"] = me.get("name", "Usuário")
+            st.session_state["user_name"] = me.get("name", "Aventureiro")
         except Exception:
-            st.session_state["user_name"] = "Usuário"
+            st.session_state["user_name"] = "Aventureiro"
     show_dashboard()

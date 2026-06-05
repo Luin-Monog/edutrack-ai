@@ -9,6 +9,7 @@ query "academic_tasks/create" verb=POST {
     date due_date
     int subject_id
     text status?=pending filters=trim
+    text priority?=media filters=trim
   }
 
   stack {
@@ -17,17 +18,17 @@ query "academic_tasks/create" verb=POST {
       field_value = $input.subject_id
       output = ["user_id"]
     } as $subject
-
+  
     precondition ($subject != null) {
       error_type = "notfound"
       error = "Subject not found."
     }
-
+  
     precondition ($subject.user_id == $auth.id) {
       error_type = "accessdenied"
       error = "Access denied."
     }
-
+  
     db.add academic_tasks {
       data = {
         title      : $input.title
@@ -36,6 +37,7 @@ query "academic_tasks/create" verb=POST {
         subject_id : $input.subject_id
         user_id    : $auth.id
         status     : $input.status
+        priority   : $input.priority
       }
     } as $task
   }
