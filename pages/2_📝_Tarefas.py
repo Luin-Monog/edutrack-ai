@@ -40,6 +40,19 @@ def _due_str(task: dict) -> str:
     return d.strftime("%d/%m/%Y") if d else "—"
 
 
+def update_task(t: dict, **overrides) -> None:
+    """Always sends all current task fields + any overrides to satisfy Xano."""
+    api.tasks_update(
+        t["id"],
+        title=overrides.get("title", t.get("title")),
+        description=overrides.get("description", t.get("description") or ""),
+        due_date=overrides.get("due_date",
+                               _due_dt(t).strftime("%Y-%m-%d") if _due_dt(t) else None),
+        status=overrides.get("status", t.get("status")),
+        priority=overrides.get("priority", t.get("priority")),
+    )
+
+
 def _is_overdue(task: dict) -> bool:
     if task.get("status") == "completed":
         return False
@@ -131,7 +144,7 @@ with tab_lista:
                         )
                         if new_status != status:
                             try:
-                                api.tasks_update(t["id"], title=t.get("title"), status=new_status)
+                                update_task(t, status=new_status)
                                 load_data()
                                 st.rerun()
                             except Exception as e:
@@ -160,12 +173,11 @@ with tab_lista:
                                 save_e = st.form_submit_button("Salvar", type="primary")
                             if save_e:
                                 try:
-                                    api.tasks_update(t["id"],
-                                                     title=e_title or None,
-                                                     description=e_desc or None,
-                                                     due_date=e_due.strftime("%Y-%m-%d"),
-                                                     status=status,
-                                                     priority=e_prio)
+                                    update_task(t,
+                                                title=e_title or None,
+                                                description=e_desc or None,
+                                                due_date=e_due.strftime("%Y-%m-%d"),
+                                                priority=e_prio)
                                     load_data()
                                     st.rerun()
                                 except Exception as e:
