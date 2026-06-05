@@ -8,6 +8,8 @@ table subjects {
     timestamp created_at?=now
     text name filters=trim
     text? description
+    text? professor filters=trim
+    text? schedule filters=trim
     int user_id {
       table = "user"
     }

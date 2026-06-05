@@ -1,11 +1,9 @@
 import streamlit as st
-import subprocess
-import json
-import sys
-import os
-from datetime import datetime
+from datetime import datetime, timezone
 
-# ── Configuração da página ──────────────────────────────────────────────────
+import utils.xano_client as api
+
+# ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="EduTrack AI",
     page_icon="🎓",
@@ -13,265 +11,229 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── CSS customizado ──────────────────────────────────────────────────────────
+# ── Global CSS ─────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
-}
-
-/* Sidebar */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-}
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
 [data-testid="stSidebar"] * { color: #e2e8f0 !important; }
 
-/* Cards de disciplina */
 .subject-card {
     background: linear-gradient(135deg, #1e293b, #0f172a);
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    margin-bottom: .75rem;
-    transition: border-color .2s;
+    border: 1px solid #334155; border-radius: 12px;
+    padding: 1rem 1.25rem; margin-bottom: .75rem;
 }
-.subject-card:hover { border-color: #6366f1; }
 .subject-card h4 { color: #e2e8f0; margin: 0 0 .3rem; font-size: 1rem; }
 .subject-card p  { color: #94a3b8; margin: 0; font-size: .85rem; }
-.tag-overdue {
-    background: #7f1d1d; color: #fca5a5;
-    border-radius: 6px; padding: 2px 8px;
-    font-size: .75rem; font-weight: 600;
-}
-.tag-ok {
-    background: #14532d; color: #86efac;
-    border-radius: 6px; padding: 2px 8px;
-    font-size: .75rem; font-weight: 600;
-}
+.tag-overdue { background:#7f1d1d; color:#fca5a5; border-radius:6px; padding:2px 8px; font-size:.75rem; font-weight:600; }
+.tag-ok      { background:#14532d; color:#86efac; border-radius:6px; padding:2px 8px; font-size:.75rem; font-weight:600; }
+.tag-pending { background:#1e3a5f; color:#93c5fd; border-radius:6px; padding:2px 8px; font-size:.75rem; font-weight:600; }
 
-/* Metric overrides */
 [data-testid="metric-container"] {
-    background: #1e293b;
-    border-radius: 10px;
-    padding: .75rem 1rem;
-    border: 1px solid #334155;
+    background:#1e293b; border-radius:10px;
+    padding:.75rem 1rem; border:1px solid #334155;
+}
+.auth-box {
+    max-width: 420px; margin: 4rem auto 0;
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 16px; padding: 2rem;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Dados de demo (simulam retorno do Xano) ──────────────────────────────────
-DEMO_SUBJECTS = [
-    {"id": 1, "name": "Cálculo Diferencial", "description": "Limites, derivadas e integrais"},
-    {"id": 2, "name": "Python para Data Science", "description": "Pandas, NumPy e visualização"},
-    {"id": 3, "name": "Banco de Dados Relacionais", "description": "SQL, modelagem e normalização"},
-    {"id": 4, "name": "Estruturas de Dados", "description": "Listas, árvores, grafos e algoritmos"},
-    {"id": 5, "name": "Inteligência Artificial", "description": "Machine learning e redes neurais"},
-]
 
-DEMO_TASKS = [
-    {"id": 1, "subject_id": 1, "title": "Lista 3 – Derivadas", "due_date": "2024-03-01", "status": "pending"},
-    {"id": 2, "subject_id": 1, "title": "Prova parcial",        "due_date": "2024-04-10", "status": "pending"},
-    {"id": 3, "subject_id": 3, "title": "Diagrama ER",          "due_date": "2024-02-20", "status": "pending"},
-    {"id": 4, "subject_id": 2, "title": "Projeto final",        "due_date": "2099-12-31", "status": "pending"},
-    {"id": 5, "subject_id": 5, "title": "Artigo de revisão",    "due_date": "2024-01-15", "status": "completed"},
-]
+# ── Auth helpers ───────────────────────────────────────────────────────────────
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-PYTHON_EXE = os.path.join(os.path.dirname(__file__), ".venv", "Scripts", "python.exe")
-SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "scripts", "subject_search.py")
-
-
-def run_search(subjects, tasks, query="", include_overdue=False):
-    """Chama o script Python de busca como subprocesso e retorna o resultado."""
-    cmd = [
-        PYTHON_EXE, SCRIPT_PATH,
-        "--subjects", json.dumps(subjects, ensure_ascii=False),
-        "--tasks",    json.dumps(tasks,    ensure_ascii=False),
-        "--query",    query,
-    ]
-    if include_overdue:
-        cmd.append("--include-overdue")
-
+def do_login(email: str, password: str) -> None:
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            timeout=15,
-        )
-        if result.returncode != 0:
-            st.error(f"Erro no script de busca:\n{result.stderr}")
-            return []
-        return json.loads(result.stdout)
-    except Exception as exc:
-        st.error(f"Falha ao executar busca: {exc}")
-        return []
+        data = api.auth_login(email, password)
+        st.session_state["token"] = data["authToken"]
+        st.session_state["user_id"] = data.get("user_id")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Erro ao entrar: {e}")
 
 
-def count_overdue(subject_id, tasks):
-    today = datetime.now()
-    count = 0
-    for t in tasks:
-        if t.get("subject_id") != subject_id:
-            continue
-        if t.get("status", "").lower() == "completed":
-            continue
-        try:
-            from dateutil import parser as dp
-            if dp.parse(str(t["due_date"])) < today:
-                count += 1
-        except Exception:
-            pass
-    return count
+def do_signup(name: str, email: str, password: str) -> None:
+    try:
+        data = api.auth_signup(name, email, password)
+        st.session_state["token"] = data["authToken"]
+        st.session_state["user_id"] = data.get("user_id")
+        st.rerun()
+    except Exception as e:
+        st.error(f"Erro ao criar conta: {e}")
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("## 🎓 EduTrack AI")
-    st.markdown("---")
-    menu = st.radio(
-        "Navegar",
-        ["🏠 Dashboard", "🔍 Busca de Disciplinas", "📋 Tarefas"],
-        label_visibility="collapsed",
+# ── Login / Signup screen ──────────────────────────────────────────────────────
+
+def show_auth_screen() -> None:
+    st.markdown(
+        "<div style='text-align:center;margin-top:2rem'>"
+        "<h1>🎓 EduTrack AI</h1>"
+        "<p style='color:#94a3b8'>Seu assistente acadêmico inteligente</p>"
+        "</div>",
+        unsafe_allow_html=True,
     )
-    st.markdown("---")
-    st.caption("Innovation Lab · v0.2.0")
 
-# ═════════════════════════════════════════════════════════════════════════════
-# DASHBOARD
-# ═════════════════════════════════════════════════════════════════════════════
-if menu == "🏠 Dashboard":
+    tab_login, tab_signup = st.tabs(["Entrar", "Criar Conta"])
+
+    with tab_login:
+        with st.form("form_login"):
+            st.subheader("Bem-vindo de volta!")
+            email = st.text_input("E-mail", placeholder="seu@email.com")
+            password = st.text_input("Senha", type="password")
+            submitted = st.form_submit_button("Entrar", use_container_width=True, type="primary")
+        if submitted:
+            if email and password:
+                do_login(email, password)
+            else:
+                st.warning("Preencha e-mail e senha.")
+
+    with tab_signup:
+        with st.form("form_signup"):
+            st.subheader("Crie sua conta")
+            name = st.text_input("Nome completo")
+            email_s = st.text_input("E-mail", placeholder="seu@email.com", key="signup_email")
+            password_s = st.text_input("Senha", type="password", key="signup_pass")
+            submitted_s = st.form_submit_button("Criar Conta", use_container_width=True, type="primary")
+        if submitted_s:
+            if name and email_s and password_s:
+                do_signup(name, email_s, password_s)
+            else:
+                st.warning("Preencha todos os campos.")
+
+
+# ── Dashboard ──────────────────────────────────────────────────────────────────
+
+def show_dashboard() -> None:
+    # Sidebar
+    with st.sidebar:
+        st.markdown("## 🎓 EduTrack AI")
+        st.markdown("---")
+        user_name = st.session_state.get("user_name", "Usuário")
+        st.markdown(f"👤 **{user_name}**")
+        st.markdown("---")
+        st.caption("Innovation Lab · v0.3.0")
+        st.markdown("---")
+        if st.button("🚪 Sair", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+
     st.title("🏠 Dashboard")
     st.markdown("Bem-vindo ao **EduTrack AI** — seu assistente acadêmico inteligente.")
 
-    today = datetime.now()
-    total_subjects = len(DEMO_SUBJECTS)
-    overdue_tasks  = sum(
-        1 for t in DEMO_TASKS
-        if t.get("status", "") != "completed"
-        and __import__("dateutil.parser", fromlist=["parse"]).parse(str(t["due_date"])) < today
-        if True
-    )
-    pending_tasks = sum(1 for t in DEMO_TASKS if t.get("status") != "completed")
+    # Load data
+    with st.spinner("Carregando dados…"):
+        try:
+            subjects = api.subjects_list()
+        except Exception:
+            subjects = []
+        try:
+            tasks = api.tasks_list()
+        except Exception:
+            tasks = []
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("📚 Disciplinas",       total_subjects)
-    col2.metric("⏰ Tarefas Atrasadas", overdue_tasks,  delta=f"-{overdue_tasks} em atraso", delta_color="inverse")
-    col3.metric("📝 Tarefas Pendentes", pending_tasks)
+    today = datetime.now(tz=timezone.utc)
+
+    def _due(t: dict):
+        raw = t.get("due_date")
+        if raw is None:
+            return None
+        try:
+            return datetime.fromtimestamp(int(raw) / 1000, tz=timezone.utc)
+        except Exception:
+            try:
+                from dateutil import parser as dp
+                return dp.parse(str(raw)).replace(tzinfo=timezone.utc)
+            except Exception:
+                return None
+
+    pending_tasks = [t for t in tasks if t.get("status") != "completed"]
+    overdue_tasks = [t for t in pending_tasks if (d := _due(t)) and d < today]
+    completed_tasks = [t for t in tasks if t.get("status") == "completed"]
+    progress_pct = int(len(completed_tasks) / len(tasks) * 100) if tasks else 0
+
+    # Metrics
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("📚 Disciplinas", len(subjects))
+    col2.metric(
+        "⏰ Tarefas Atrasadas",
+        len(overdue_tasks),
+        delta=f"-{len(overdue_tasks)} em atraso" if overdue_tasks else None,
+        delta_color="inverse",
+    )
+    col3.metric("📝 Tarefas Pendentes", len(pending_tasks))
+    col4.metric("✅ Progresso Geral", f"{progress_pct}%")
 
     st.markdown("---")
-    st.subheader("Disciplinas com Tarefas Atrasadas")
 
-    overdue_results = run_search(DEMO_SUBJECTS, DEMO_TASKS, query="", include_overdue=False)
-    if overdue_results:
-        for s in overdue_results:
-            n = count_overdue(s["id"], DEMO_TASKS)
-            st.markdown(
-                f'<div class="subject-card"><h4>{s["name"]} '
-                f'<span class="tag-overdue">⚠ {n} atrasada{"s" if n>1 else ""}</span></h4>'
-                f'<p>{s.get("description","")}</p></div>',
-                unsafe_allow_html=True,
-            )
-    else:
-        st.success("🎉 Nenhuma disciplina com tarefas atrasadas!")
+    # Subjects with overdue tasks
+    col_left, col_right = st.columns(2)
 
-# ═════════════════════════════════════════════════════════════════════════════
-# BUSCA DE DISCIPLINAS
-# ═════════════════════════════════════════════════════════════════════════════
-elif menu == "🔍 Busca de Disciplinas":
-    st.title("🔍 Busca de Disciplinas")
-    st.markdown(
-        "Encontre disciplinas pelo **nome** ou veja quais têm **tarefas atrasadas**. "
-        "O filtro usa o script Python `scripts/subject_search.py` diretamente."
-    )
+    with col_left:
+        st.subheader("Disciplinas com Tarefas Atrasadas")
+        overdue_by_subject: dict[int, int] = {}
+        for t in overdue_tasks:
+            sid = t.get("subject_id")
+            if sid:
+                overdue_by_subject[sid] = overdue_by_subject.get(sid, 0) + 1
 
-    col_q, col_flag = st.columns([3, 1])
-    with col_q:
-        query_input = st.text_input(
-            "Buscar por nome ou descrição",
-            placeholder="ex: python, banco de dados…",
-            key="search_query",
-        )
-    with col_flag:
-        st.markdown("<br>", unsafe_allow_html=True)
-        include_overdue = st.checkbox("Incluir atrasadas", value=True, key="include_overdue")
+        subjects_with_overdue = [s for s in subjects if s.get("id") in overdue_by_subject]
 
-    if st.button("🔎 Buscar", type="primary", use_container_width=True):
-        with st.spinner("Executando busca…"):
-            results = run_search(
-                DEMO_SUBJECTS, DEMO_TASKS,
-                query=query_input,
-                include_overdue=include_overdue,
-            )
-
-        st.markdown(f"**{len(results)} resultado(s) encontrado(s)**")
-        st.markdown("---")
-
-        if results:
-            for s in results:
-                n_late = count_overdue(s["id"], DEMO_TASKS)
-                tag = (
-                    f'<span class="tag-overdue">⚠ {n_late} atrasada{"s" if n_late>1 else ""}</span>'
-                    if n_late else
-                    '<span class="tag-ok">✓ Em dia</span>'
-                )
+        if subjects_with_overdue:
+            for s in subjects_with_overdue:
+                n = overdue_by_subject[s["id"]]
                 st.markdown(
-                    f'<div class="subject-card"><h4>{s["name"]} {tag}</h4>'
-                    f'<p>{s.get("description","")}</p></div>',
+                    f'<div class="subject-card"><h4>{s["name"]} '
+                    f'<span class="tag-overdue">⚠ {n} atrasada{"s" if n > 1 else ""}</span></h4>'
+                    f'<p>{s.get("professor","") or s.get("description","")}</p></div>',
                     unsafe_allow_html=True,
                 )
         else:
-            st.info("Nenhuma disciplina encontrada para os critérios informados.")
+            st.success("🎉 Nenhuma disciplina com tarefas atrasadas!")
 
-    # Instrução do endpoint Xano
-    with st.expander("📡 Como integrar ao Xano"):
-        st.markdown("""
-**Endpoint criado:** `GET /subjects/search`
+    with col_right:
+        st.subheader("Próximas Tarefas")
+        upcoming = sorted(
+            [t for t in pending_tasks if _due(t) and _due(t) >= today],
+            key=lambda t: _due(t),
+        )[:5]
 
-| Parâmetro | Tipo | Descrição |
-|---|---|---|
-| `query` | string (opcional) | Termo para busca textual |
-| `include_overdue` | bool (opcional) | Inclui disciplinas com tarefas atrasadas |
+        if upcoming:
+            for t in upcoming:
+                d = _due(t)
+                due_str = d.strftime("%d/%m/%Y") if d else "—"
+                subj = next((s["name"] for s in subjects if s.get("id") == t.get("subject_id")), "—")
+                st.markdown(
+                    f'<div class="subject-card">'
+                    f'<h4><span class="tag-pending">📅 {due_str}</span> {t["title"]}</h4>'
+                    f'<p>📚 {subj}</p></div>',
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("Nenhuma tarefa próxima.")
 
-**Fluxo no Xano:**
-1. Busca `subjects` e `academic_tasks` do usuário autenticado
-2. Chama o sidecar Python via `external.request → POST http://localhost:8787/search`
-3. Retorna a lista filtrada
-
-**Para rodar o sidecar:**
-```bash
-.venv\\Scripts\\python sidecar_search_api.py
-```
-""")
-
-# ═════════════════════════════════════════════════════════════════════════════
-# TAREFAS
-# ═════════════════════════════════════════════════════════════════════════════
-elif menu == "📋 Tarefas":
-    st.title("📋 Gerenciamento de Tarefas")
-
-    today = datetime.now()
-    for task in DEMO_TASKS:
-        subject = next((s for s in DEMO_SUBJECTS if s["id"] == task["subject_id"]), {})
-        subject_name = subject.get("name", "—")
-        from dateutil import parser as dp
-        try:
-            due = dp.parse(str(task["due_date"]))
-            due_str = due.strftime("%d/%m/%Y")
-            is_late  = due < today and task.get("status") != "completed"
-        except Exception:
-            due_str = task["due_date"]
-            is_late  = False
-
-        status_icon = "✅" if task.get("status") == "completed" else ("🔴" if is_late else "🟡")
-        st.markdown(
-            f'<div class="subject-card">'
-            f'<h4>{status_icon} {task["title"]}</h4>'
-            f'<p>📚 {subject_name} &nbsp;|&nbsp; 📅 {due_str}'
-            f'{" &nbsp;|&nbsp; <span class=\'tag-overdue\'>Atrasada</span>" if is_late else ""}'
-            f'</p></div>',
-            unsafe_allow_html=True,
+    # Welcome for new users
+    if not subjects and not tasks:
+        st.markdown("---")
+        st.info(
+            "👋 Parece que você ainda não tem disciplinas ou tarefas cadastradas. "
+            "Acesse **Disciplinas** no menu lateral para começar!"
         )
+
+
+# ── Entry point ────────────────────────────────────────────────────────────────
+
+if "token" not in st.session_state:
+    show_auth_screen()
+else:
+    # Try to load user name once per session
+    if "user_name" not in st.session_state:
+        try:
+            me = api.auth_me()
+            st.session_state["user_name"] = me.get("name", "Usuário")
+        except Exception:
+            st.session_state["user_name"] = "Usuário"
+    show_dashboard()

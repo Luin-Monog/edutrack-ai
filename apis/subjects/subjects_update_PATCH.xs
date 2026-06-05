@@ -7,6 +7,8 @@ query "subjects/update" verb=PATCH {
     int subject_id
     text? name
     text? description
+    text? professor filters=trim
+    text? schedule filters=trim
     text? visibility
   }
 
@@ -36,6 +38,8 @@ query "subjects/update" verb=PATCH {
       data = {
         name       : $input.name
         description: $input.description
+        professor  : $input.professor
+        schedule   : $input.schedule
         visibility : $input.visibility
       }
     } as $updated
