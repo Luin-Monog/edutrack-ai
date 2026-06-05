@@ -12,17 +12,17 @@ query "academic_tasks/delete" verb=DELETE {
       field_name = "id"
       field_value = $input.task_id
     } as $task
-
+  
     precondition ($task != null) {
       error_type = "notfound"
       error = "Task not found."
     }
-
+  
     precondition ($task.user_id == $auth.id) {
       error_type = "accessdenied"
       error = "Access denied."
     }
-
+  
     db.del academic_tasks {
       field_name = "id"
       field_value = $input.task_id

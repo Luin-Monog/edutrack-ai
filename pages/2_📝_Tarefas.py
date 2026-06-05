@@ -2,22 +2,7 @@ import streamlit as st
 from datetime import datetime, timezone, date
 
 import utils.xano_client as api
-from utils.theme import UNDERDARK_CSS, SPORE_DIVIDER, PRIORITY_BADGE, STATUS_BADGE
-
-st.set_page_config(page_title="Tarefas", page_icon="📝", layout="wide")
-st.markdown(UNDERDARK_CSS, unsafe_allow_html=True)
-
-if "token" not in st.session_state:
-    st.warning("Faça login primeiro.")
-    st.page_link("app.py", label="Ir para o Login", icon="🔑")
-    st.stop()
-
-with st.sidebar:
-    st.markdown(f"<div style='color:#a78bfa; font-size:.85rem;'>👤 {st.session_state.get('user_name','Usuário')}</div>", unsafe_allow_html=True)
-    st.markdown("---")
-    if st.button("🚪 Sair", use_container_width=True):
-        st.session_state.clear()
-        st.switch_page("app.py")
+from utils.theme import SPORE_DIVIDER, PRIORITY_BADGE, STATUS_BADGE
 
 st.markdown("# 📝 Minhas Tarefas")
 st.markdown(SPORE_DIVIDER, unsafe_allow_html=True)
@@ -123,28 +108,38 @@ with tab_lista:
                 prio    = t.get("priority", "media")
                 status  = t.get("status", "pending")
 
-                overdue_tag = ' <span class="badge-overdue">🔴 Atrasada</span>' if overdue else ""
+                prio_icon   = "🔴" if prio == "alta" else "🟠" if prio == "media" else "🟢"
+                overdue_tag = "  ⚠️ Atrasada" if overdue else ""
                 prio_html   = PRIORITY_BADGE.get(prio, "")
-                status_html = STATUS_BADGE.get(status, "")
 
                 with st.expander(
-                    f"{prio_html} {t['title']}  ·  {_due_str(t)}{overdue_tag}",
+                    f"{prio_icon} {t['title']}  ·  {_due_str(t)}{overdue_tag}",
                     expanded=overdue,
                 ):
-                    col_info, col_act = st.columns([3, 1])
+                    # Row 1: status selector + quick complete + actions
+                    col_status, col_btn, col_edit, col_del = st.columns([3, 1, 1, 1])
 
-                    with col_info:
-                        st.markdown(
-                            f"{status_html} &nbsp; {prio_html}",
-                            unsafe_allow_html=True,
+                    with col_status:
+                        status_options = list(STATUS_LABELS.keys())
+                        new_status = st.selectbox(
+                            "Status",
+                            options=status_options,
+                            format_func=lambda k: STATUS_LABELS[k],
+                            index=status_options.index(status),
+                            key=f"status_sel_{t['id']}",
+                            label_visibility="collapsed",
                         )
-                        st.markdown(f"**Prazo:** {_due_str(t)}")
-                        if t.get("description"):
-                            st.markdown(f"**Descrição:** {t['description']}")
+                        if new_status != status:
+                            try:
+                                api.tasks_update(t["id"], status=new_status)
+                                load_data()
+                                st.rerun()
+                            except Exception as e:
+                                st.error(str(e))
 
-                    with col_act:
+                    with col_btn:
                         if status != "completed":
-                            if st.button("✅ Concluir", key=f"done_{t['id']}"):
+                            if st.button("✅", key=f"done_{t['id']}", help="Marcar como concluída"):
                                 try:
                                     api.tasks_complete(t["id"])
                                     load_data()
@@ -152,15 +147,13 @@ with tab_lista:
                                 except Exception as e:
                                     st.error(str(e))
 
-                        with st.popover("✏️ Editar"):
+                    with col_edit:
+                        with st.popover("✏️"):
                             with st.form(f"edit_task_{t['id']}"):
                                 e_title = st.text_input("Título", value=t.get("title", ""))
                                 e_desc  = st.text_area("Descrição", value=t.get("description") or "", height=60)
                                 cur_due = _due_dt(t)
                                 e_due   = st.date_input("Prazo", value=cur_due.date() if cur_due else date.today(), format="DD/MM/YYYY")
-                                e_status = st.selectbox("Status", list(STATUS_LABELS.keys()),
-                                                        format_func=lambda k: STATUS_LABELS[k],
-                                                        index=list(STATUS_LABELS.keys()).index(status))
                                 e_prio  = st.selectbox("Prioridade", list(PRIORITY_LABELS.keys()),
                                                        format_func=lambda k: PRIORITY_LABELS[k],
                                                        index=list(PRIORITY_LABELS.keys()).index(prio))
@@ -171,13 +164,15 @@ with tab_lista:
                                                      title=e_title or None,
                                                      description=e_desc or None,
                                                      due_date=e_due.strftime("%Y-%m-%d"),
-                                                     status=e_status, priority=e_prio)
+                                                     status=status,
+                                                     priority=e_prio)
                                     load_data()
                                     st.rerun()
                                 except Exception as e:
                                     st.error(str(e))
 
-                        with st.popover("🗑️ Excluir"):
+                    with col_del:
+                        with st.popover("🗑️"):
                             st.warning(f"Excluir **{t['title']}**?")
                             if st.button("Confirmar", key=f"deltask_{t['id']}", type="primary"):
                                 try:
@@ -186,6 +181,15 @@ with tab_lista:
                                     st.rerun()
                                 except Exception as e:
                                     st.error(str(e))
+
+                    # Row 2: meta info
+                    st.markdown(
+                        f'{prio_html} &nbsp; 📅 **{_due_str(t)}**'
+                        + (f'  &nbsp; <span class="badge-overdue">⚠️ Atrasada</span>' if overdue else ""),
+                        unsafe_allow_html=True,
+                    )
+                    if t.get("description"):
+                        st.caption(t["description"])
 
 # ════════════════════════════════════════════════════════════════════════════
 # TAB: NOVA TAREFA

@@ -12,6 +12,7 @@ table academic_tasks {
     enum priority?=media {
       values = ["baixa", "media", "alta"]
     }
+  
     int subject_id {
       table = "subjects"
     }

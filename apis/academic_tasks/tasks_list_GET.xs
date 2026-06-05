@@ -1,11 +1,9 @@
-// List all academic tasks belonging to the authenticated user
+// List all academic tasks belonging to the authenticated user. No filter inputs.
 query "academic_tasks/list" verb=GET {
   api_group = "Academic Tasks"
   auth = "user"
 
   input {
-    int? subject_id
-    text? status
   }
 
   stack {

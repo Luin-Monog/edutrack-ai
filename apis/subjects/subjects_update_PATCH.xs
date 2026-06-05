@@ -7,33 +7,29 @@ query "subjects/update" verb=PATCH {
     int subject_id
     text? name
     text? description
-    text? professor filters=trim
-    text? schedule filters=trim
-    text? semester filters=trim
-    bool? archived
+    text? professor
+    text? schedule
+    text? semester
     text? visibility
+    bool? archived
   }
 
   stack {
-    // Fetch the subject
     db.get subjects {
       field_name = "id"
       field_value = $input.subject_id
     } as $subject
-  
-    // Ensure the subject exists
+
     precondition ($subject != null) {
       error_type = "notfound"
       error = "Subject not found."
     }
-  
-    // Ensure the subject belongs to the authenticated user
+
     precondition ($subject.user_id == $auth.id) {
       error_type = "accessdenied"
       error = "Access denied."
     }
-  
-    // Apply the update
+
     db.edit subjects {
       field_name = "id"
       field_value = $input.subject_id
@@ -43,8 +39,8 @@ query "subjects/update" verb=PATCH {
         professor  : $input.professor
         schedule   : $input.schedule
         semester   : $input.semester
-        archived   : $input.archived
         visibility : $input.visibility
+        archived   : $input.archived
       }
     } as $updated
   }

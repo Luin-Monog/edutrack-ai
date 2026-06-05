@@ -4,22 +4,7 @@ import streamlit as st
 from datetime import datetime, timezone
 
 import utils.xano_client as api
-from utils.theme import UNDERDARK_CSS, SPORE_DIVIDER
-
-st.set_page_config(page_title="Relatórios", page_icon="📊", layout="wide")
-st.markdown(UNDERDARK_CSS, unsafe_allow_html=True)
-
-if "token" not in st.session_state:
-    st.warning("Faça login primeiro.")
-    st.page_link("app.py", label="Ir para o Login", icon="🔑")
-    st.stop()
-
-with st.sidebar:
-    st.markdown(f"<div style='color:#a78bfa; font-size:.85rem;'>👤 {st.session_state.get('user_name','Usuário')}</div>", unsafe_allow_html=True)
-    st.markdown("---")
-    if st.button("🚪 Sair", use_container_width=True):
-        st.session_state.clear()
-        st.switch_page("app.py")
+from utils.theme import SPORE_DIVIDER
 
 st.markdown("# 📊 Relatórios & Progresso")
 st.markdown(SPORE_DIVIDER, unsafe_allow_html=True)

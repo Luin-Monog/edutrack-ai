@@ -134,6 +134,7 @@ def subjects_create(
     description: Optional[str] = None,
     professor: Optional[str] = None,
     schedule: Optional[str] = None,
+    semester: Optional[str] = None,
     visibility: str = "private",
 ) -> Dict:
     r = requests.post(
@@ -143,6 +144,7 @@ def subjects_create(
             "description": description,
             "professor": professor,
             "schedule": schedule,
+            "semester": semester,
             "visibility": visibility,
         },
         headers=_headers(),
@@ -152,9 +154,12 @@ def subjects_create(
 
 
 def subjects_update(subject_id: int, **kwargs) -> Dict:
+    # Only send fields that have a real value; omit None so Xano won't complain
+    # about missing optional params.
+    payload = {k: v for k, v in kwargs.items() if v is not None}
     r = requests.patch(
         f"{_base('SUBJECTS')}/subjects/update",
-        json={"subject_id": subject_id, **kwargs},
+        json={"subject_id": subject_id, **payload},
         headers=_headers(),
         timeout=15,
     )
@@ -202,6 +207,7 @@ def tasks_create(
     subject_id: int,
     description: Optional[str] = None,
     status: str = "pending",
+    priority: str = "media",
 ) -> Dict:
     r = requests.post(
         f"{_base('TASKS')}/academic_tasks/create",
@@ -211,6 +217,7 @@ def tasks_create(
             "subject_id": subject_id,
             "description": description,
             "status": status,
+            "priority": priority,
         },
         headers=_headers(),
         timeout=15,

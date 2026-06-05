@@ -1,22 +1,8 @@
 import streamlit as st
+from datetime import datetime, timezone
 
 import utils.xano_client as api
-from utils.theme import UNDERDARK_CSS, SPORE_DIVIDER
-
-st.set_page_config(page_title="Disciplinas", page_icon="📚", layout="wide")
-st.markdown(UNDERDARK_CSS, unsafe_allow_html=True)
-
-if "token" not in st.session_state:
-    st.warning("Faça login primeiro.")
-    st.page_link("app.py", label="Ir para o Login", icon="🔑")
-    st.stop()
-
-with st.sidebar:
-    st.markdown(f"<div style='color:#a78bfa; font-size:.85rem;'>👤 {st.session_state.get('user_name','Usuário')}</div>", unsafe_allow_html=True)
-    st.markdown("---")
-    if st.button("🚪 Sair", use_container_width=True):
-        st.session_state.clear()
-        st.switch_page("app.py")
+from utils.theme import SPORE_DIVIDER
 
 st.markdown("# 📚 Gestão de Disciplinas")
 st.markdown(SPORE_DIVIDER, unsafe_allow_html=True)
@@ -39,6 +25,35 @@ tasks: list    = st.session_state.get("tasks_cache", [])
 
 active   = [s for s in subjects if not s.get("archived", False)]
 archived = [s for s in subjects if s.get("archived", False)]
+
+
+def _parse_due_date(raw) -> datetime | None:
+    """Parse due_date from either string (YYYY-MM-DD) or ms timestamp."""
+    if raw is None:
+        return None
+    try:
+        # Try as ms timestamp (old format from Xano)
+        return datetime.fromtimestamp(int(raw) / 1000, tz=timezone.utc)
+    except (ValueError, TypeError):
+        try:
+            # Try as string (YYYY-MM-DD)
+            return datetime.strptime(str(raw), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except Exception:
+            return None
+
+
+def update_subject(s: dict, **overrides) -> None:
+    """Always sends all current subject fields + any overrides to satisfy Xano."""
+    api.subjects_update(
+        s["id"],
+        name=overrides.get("name",        s.get("name")),
+        description=overrides.get("description", s.get("description")),
+        professor=overrides.get("professor",   s.get("professor")),
+        schedule=overrides.get("schedule",    s.get("schedule")),
+        semester=overrides.get("semester",    s.get("semester")),
+        visibility=overrides.get("visibility",  s.get("visibility") or "private"),
+        archived=overrides.get("archived",    s.get("archived", False)),
+    )
 
 
 def task_progress(subject_id: int):
@@ -77,17 +92,14 @@ with tab_lista:
                 1 for t in tasks
                 if t.get("subject_id") == s["id"]
                 and t.get("status") != "completed"
-                and t.get("due_date") is not None
-                and __import__("datetime").datetime.fromtimestamp(
-                    int(t["due_date"]) / 1000,
-                    tz=__import__("datetime").timezone.utc
-                ) < __import__("datetime").datetime.now(tz=__import__("datetime").timezone.utc)
+                and (d := _parse_due_date(t.get("due_date")))
+                and d < datetime.now(tz=timezone.utc)
             )
 
             badge_overdue = f'<span class="badge-overdue">⚠ {overdue_n} atrasada{"s" if overdue_n>1 else ""}</span>' if overdue_n else '<span class="badge-ok">✓ Em dia</span>'
-            semester_tag  = f'<span style="color:#6d28d9; font-size:.8rem;">📅 {s["semester"]}</span>' if s.get("semester") else ""
+            semester_tag = f"  ·  📅 {s['semester']}" if s.get("semester") else ""
 
-            with st.expander(f"📚 {s['name']}  {semester_tag}", expanded=False):
+            with st.expander(f"📚 {s['name']}{semester_tag}", expanded=False):
                 col_info, col_prog, col_act = st.columns([2, 2, 1])
 
                 with col_info:
@@ -114,9 +126,8 @@ with tab_lista:
                             save = st.form_submit_button("Salvar", type="primary")
                         if save:
                             try:
-                                api.subjects_update(
-                                    s["id"],
-                                    name=new_name or None,
+                                update_subject(s,
+                                    name=new_name or s.get("name"),
                                     professor=new_prof or None,
                                     schedule=new_sched or None,
                                     semester=new_sem or None,
@@ -132,7 +143,7 @@ with tab_lista:
                         st.info(f"Arquivar **{s['name']}**?\nEla não aparecerá na lista ativa mas não será excluída.")
                         if st.button("Confirmar", key=f"arch_{s['id']}", type="primary"):
                             try:
-                                api.subjects_update(s["id"], archived=True)
+                                update_subject(s, archived=True)
                                 st.success("Arquivada!")
                                 load_subjects()
                                 st.rerun()
@@ -159,13 +170,44 @@ with tab_novo:
     if "subject_form_key" not in st.session_state:
         st.session_state["subject_form_key"] = 0
 
+    _DAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+    _HOURS = [f"{h:02d}:{m:02d}" for h in range(6, 24) for m in (0, 30)]
+    _current_year = __import__("datetime").date.today().year
+    _SEMESTERS = [f"{y}.{p}" for y in range(_current_year - 1, _current_year + 3) for p in (1, 2)]
+
     with st.form(f"form_create_subject_{st.session_state['subject_form_key']}"):
         nome      = st.text_input("Nome da Disciplina *", placeholder="Ex: Cálculo I")
         professor = st.text_input("Nome do Professor",    placeholder="Ex: Dr. Silva")
-        schedule  = st.text_input("Dia / Horário",        placeholder="Ex: Seg e Qua 08:00")
-        semester  = st.text_input("Semestre / Período",   placeholder="Ex: 2026.1")
-        description = st.text_area("Descrição (opcional)", height=80)
-        submitted = st.form_submit_button("🌱 Cadastrar", type="primary", use_container_width=True)
+
+        st.markdown("**Dias e Horário das Aulas**")
+        col_days, col_time = st.columns([3, 1])
+        with col_days:
+            days_sel = st.multiselect(
+                "Dias da semana",
+                options=_DAYS,
+                default=[],
+                label_visibility="collapsed",
+            )
+        with col_time:
+            time_sel = st.selectbox(
+                "Horário",
+                options=["—"] + _HOURS,
+                label_visibility="collapsed",
+            )
+
+        st.markdown("**Semestre / Período**")
+        col_sem, col_per = st.columns(2)
+        with col_sem:
+            sem_choice = st.selectbox(
+                "Semestre",
+                options=["— Selecionar —"] + _SEMESTERS,
+                label_visibility="collapsed",
+            )
+        with col_per:
+            st.caption("Ex: 2026.1 = primeiro semestre de 2026")
+
+        description = st.text_area("Descrição (opcional)", height=70)
+        submitted   = st.form_submit_button("🌱 Cadastrar", type="primary", use_container_width=True)
 
     if submitted:
         if not nome.strip():
@@ -173,12 +215,19 @@ with tab_novo:
         elif nome.strip().lower() in [s["name"].strip().lower() for s in active]:
             st.error(f"Já existe uma disciplina ativa chamada **{nome}**.")
         else:
+            # Build schedule string from selections
+            schedule_str = None
+            if days_sel:
+                schedule_str = ", ".join(days_sel)
+                if time_sel != "—":
+                    schedule_str += f" às {time_sel}"
+            semester_str = sem_choice if sem_choice != "— Selecionar —" else None
             try:
                 api.subjects_create(
                     name=nome.strip(),
                     professor=professor.strip() or None,
-                    schedule=schedule.strip() or None,
-                    semester=semester.strip() or None,
+                    schedule=schedule_str,
+                    semester=semester_str,
                     description=description.strip() or None,
                 )
                 st.success(f"✨ Disciplina **{nome}** criada com sucesso!")
@@ -247,7 +296,7 @@ with tab_archive:
         st.info("Nenhuma disciplina arquivada.")
     else:
         for s in archived:
-            with st.expander(f'🗄️ {s["name"]} <span class="badge-archived">Arquivada</span>', expanded=False):
+            with st.expander(f'🗄️ {s["name"]}  ·  📦 Arquivada', expanded=False):
                 col_i, col_a = st.columns([3, 1])
                 with col_i:
                     st.markdown(f"**Professor:** {s.get('professor') or '—'}")
@@ -255,7 +304,7 @@ with tab_archive:
                 with col_a:
                     if st.button("♻️ Desarquivar", key=f"unarch_{s['id']}"):
                         try:
-                            api.subjects_update(s["id"], archived=False)
+                            update_subject(s, archived=False)
                             st.success("Desarquivada!")
                             load_subjects()
                             st.rerun()

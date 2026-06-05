@@ -27,7 +27,7 @@ query "reset/request-reset-link" verb=GET {
       value = $api_base_url ~ "/1_start_here_demo_page#/update-password" ~ "?magic_token=" ~ $token_and_email.token ~ "&email=" ~ $token_and_email.email
     }
   
-    // Create HTML message to include magic reset password link
+    // Create HTML message with the reset code visible for use in the app
     util.template_engine {
       value = """
         <!DOCTYPE html>
@@ -35,20 +35,21 @@ query "reset/request-reset-link" verb=GET {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Password Reset</title>
+          <title>Redefinição de Senha — EduTrack AI</title>
         </head>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-            <h2>Password Reset Request</h2>
-            <p>Hello,</p>
-            <p>We received a request to reset your password. To proceed, please click the link below:</p>
-            <p style="text-align: center; margin: 30px 0;">
-              <a href="{{ $var.magic_link }}" style="display: inline-block; padding: 12px 25px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 16px;">
-                Reset Your Password
-              </a>
-            </p>
-            <p>If you did not request a password reset, please ignore this email.</p>
-            <p>Thank you.</p>
+            <h2>Redefinição de Senha — EduTrack AI</h2>
+            <p>Olá,</p>
+            <p>Recebemos uma solicitação para redefinir sua senha. Use o código abaixo no aplicativo EduTrack AI:</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <span style="display: inline-block; padding: 16px 32px; background-color: #1e293b; color: #ffffff; font-size: 22px; font-family: monospace; letter-spacing: 4px; border-radius: 8px;">
+                {{ $token_and_email.token }}
+              </span>
+            </div>
+            <p>Cole esse código na tela de <strong>Esqueci minha senha</strong> do EduTrack AI junto com sua nova senha.</p>
+            <p>O código expira em 24 horas e só pode ser usado uma vez.</p>
+            <p>Se você não solicitou a redefinição, ignore este e-mail.</p>
           </div>
         </body>
         </html>
