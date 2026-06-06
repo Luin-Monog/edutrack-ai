@@ -129,8 +129,8 @@ with tab_lista:
                     f"{prio_icon} {t['title']}  ·  {_due_str(t)}{overdue_tag}",
                     expanded=overdue,
                 ):
-                    # Row 1: status selector + quick complete + actions
-                    col_status, col_btn, col_edit, col_del = st.columns([3, 1, 1, 1])
+                    # Row 1: status selector + actions
+                    col_status, col_edit, col_del = st.columns([3, 1, 1])
 
                     with col_status:
                         status_options = list(STATUS_LABELS.keys())
@@ -149,16 +149,6 @@ with tab_lista:
                                 st.rerun()
                             except Exception as e:
                                 st.error(str(e))
-
-                    with col_btn:
-                        if status != "completed":
-                            if st.button("✅", key=f"done_{t['id']}", help="Marcar como concluída"):
-                                try:
-                                    api.tasks_complete(t["id"])
-                                    load_data()
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(str(e))
 
                     with col_edit:
                         with st.popover("✏️"):
